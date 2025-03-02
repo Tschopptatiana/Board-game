@@ -98,18 +98,22 @@ app.delete("/delete-room", (req, res) => {
 
   // Удаление комнаты из сохраненных комнат
   savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
-  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+  try {
+    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+  } catch (err) {
+    console.error("Ошибка при сохранении файла:", err);
+    return res.status(500).json({ error: "Ошибка сервера" });
+  }
 
   // Удаление комнаты из активных комнат в памяти
   if (rooms[roomId]) {
+    // Уведомление всех игроков в комнате
+    io.to(roomId).emit("roomDeleted", { message: "Комната удалена администратором" });
     delete rooms[roomId];
     console.log(`Комната ${roomId} удалена из памяти`);
   } else {
     console.log(`Комната ${roomId} не найдена в памяти`);
   }
-
-  // Уведомление всех игроков в комнате
-  io.to(roomId).emit("roomDeleted", { message: "Комната удалена администратором" });
 
   res.json({ success: true, message: `Комната ${roomId} удалена` });
 });
@@ -168,7 +172,9 @@ io.on("connection", (socket) => {
     const player = rooms[roomId].players.find((p) => p.id === socket.id);
 
     if (player) {
-      player.position += roll; // Обновляем позицию игрока
+      // Обновляем позицию игрока
+      player.position.x += roll * 50; // Пример: сдвигаем на 50px за каждый пункт кубика
+      player.position.y += roll * 50;
       io.to(roomId).emit("updatePlayers", rooms[roomId].players);
     }
   });
