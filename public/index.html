@@ -195,26 +195,33 @@
 
         // Обновление игроков
         socket.on("updatePlayers", (serverPlayers) => {
-            document.querySelectorAll(".player").forEach(el => el.remove());
-            players = {};
+    document.querySelectorAll(".player").forEach(el => el.remove());
+    players = {};
 
-            serverPlayers.forEach((player, index) => {
-                let playerDiv = document.createElement("div");
-                playerDiv.classList.add("player");
-                playerDiv.style.backgroundColor = playerColors[index % playerColors.length];
-                playerDiv.style.left = `${player.position.x}px`;
-                playerDiv.style.top = `${player.position.y}px`;
-                playerDiv.dataset.id = player.id;
-                players[player.id] = playerDiv;
+    let gameBoard = document.getElementById("gameBoard");
+    let boardRect = gameBoard.getBoundingClientRect();
 
-                if (player.id === socket.id) {
-                    myPlayerId = player.id;
-                    playerDiv.id = "myPlayer";
-                }
+    serverPlayers.forEach((player, index) => {
+        let playerDiv = document.createElement("div");
+        playerDiv.classList.add("player");
+        playerDiv.style.backgroundColor = playerColors[index % playerColors.length];
 
-                document.body.appendChild(playerDiv);
-            });
-        });
+        // Пересчитываем относительные координаты в пиксели
+        playerDiv.style.left = `${(player.position.xPercent / 100) * boardRect.width}px`;
+        playerDiv.style.top = `${(player.position.yPercent / 100) * boardRect.height}px`;
+
+        playerDiv.dataset.id = player.id;
+        players[player.id] = playerDiv;
+
+        if (player.id === socket.id) {
+            myPlayerId = player.id;
+            playerDiv.id = "myPlayer";
+        }
+
+        document.getElementById("board").appendChild(playerDiv);
+    });
+});
+
 
         // Перемещение игрока
         document.addEventListener("click", (event) => {
