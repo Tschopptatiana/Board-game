@@ -5,9 +5,10 @@ import http from "http";
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
-import dotenv from "dotenv";
-import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./Board-game/supabase.js";
+console.log("Файлы в папке:", fs.readdirSync("./"));
 
+import dotenv from "dotenv";
+import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase.js";
 
 dotenv.config();
 
