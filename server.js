@@ -21,7 +21,13 @@ const io = new Server(server, { cors: { origin: "*" } });
 let rooms = {}; // Должно быть `let`, а не `const`
 
 (async () => {
-  rooms = await loadRoomsFromSupabase();
+  try {
+    rooms = await loadRoomsFromSupabase();
+    console.log("✅ Комнаты загружены из Supabase");
+  } catch (error) {
+    console.error("❌ Ошибка загрузки комнат из Supabase:", error);
+    rooms = {}; // Если ошибка, создаем пустой объект
+  }
 })();
 
 const playerColors = ["red", "blue", "green", "yellow", "purple"];
@@ -45,13 +51,18 @@ if (fs.existsSync(roomsFilePath)) {
 }
 
 // Функция сохранения комнат
-function saveRoomsToFile() {
-  saveRoomsToSupabase(rooms);
+async function saveRoomsToFile() {
+  try {
+    await saveRoomsToSupabase(rooms);
+    console.log("✅ Комнаты сохранены в Supabase");
+  } catch (error) {
+    console.error("❌ Ошибка при сохранении в Supabase:", error);
+  }
 }
 // Проверка комнаты
 app.get("/check-room", (req, res) => {
   const { roomId } = req.query;
-  res.json({ exists: rooms.hasOwnProperty(roomId) });
+  res.json({ exists: roomId in rooms });
 });
 
 // Создание комнаты
