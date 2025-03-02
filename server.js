@@ -6,8 +6,7 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import dotenv from "dotenv";
-import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase";
-
+import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase.js";
 
 dotenv.config();
 
@@ -110,10 +109,7 @@ socket.on("joinRoom", (roomId) => {
   const playerData = {
       id: socket.id,
       color: playerColor,
-      position: {
-          x: startPositions[rooms[roomId].players.length % playerColors.length].x,
-          y: startPositions[rooms[roomId].players.length % playerColors.length].y,
-      },
+      position: { x: startPositions[rooms[roomId].players.length % playerColors.length].x, y: startPositions[rooms[roomId].players.length % playerColors.length].y }
   };
 
   rooms[roomId].players.push(playerData);
