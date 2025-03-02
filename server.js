@@ -187,18 +187,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("rollDice", (roomId, roll) => {
+  socket.on("rollDice", ({ roomId, roll }) => {
     if (!rooms[roomId]) {
-      socket.emit("roomNotFound", { message: "Комната не найдена" });
-      return;
+        socket.emit("roomNotFound", { message: "Комната не найдена" });
+        return;
     }
-    const player = rooms[roomId].players.find((p) => p.id === socket.id);
 
-    if (player) {
-      player.position += roll; // Обновляем позицию игрока
-      io.to(roomId).emit("updatePlayers", rooms[roomId].players);
-    }
-  });
+    io.to(roomId).emit("rollDiceResult", { roll }); // Отправляем результат всем игрокам
+});
+
 
   // Открытие модального окна
   socket.on("openModal", ({ roomId, category }) => {

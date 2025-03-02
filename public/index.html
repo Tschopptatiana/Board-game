@@ -340,13 +340,18 @@
             return categoryImages[Math.floor(Math.random() * categoryImages.length)];
         }
 
+        socket.on("rollDiceResult", ({ roll }) => {
+    const diceElement = document.querySelector(".dice");
+    diceElement.innerText = roll;
+});
+
+
         // Бросок кубика
         function rollDice() {
-            const diceElement = document.querySelector(".dice");
-            const roll = Math.floor(Math.random() * 6) + 1;
-            diceElement.innerText = roll;
-            socket.emit("rollDice", roomId, roll);
-        }
+    const roll = Math.floor(Math.random() * 6) + 1;
+    socket.emit("rollDice", { roomId, roll }); // Отправляем событие на сервер
+}
+
     </script>
 </body>
 </html>
