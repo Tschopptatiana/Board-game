@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import dotenv from "dotenv";
+import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase.js";
+
 
 dotenv.config();
 
@@ -18,6 +20,10 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 let rooms = {}; // Должно быть `let`, а не `const`
+
+(async () => {
+  rooms = await loadRoomsFromSupabase();
+})();
 
 const playerColors = ["red", "blue", "green", "yellow", "purple"];
 const startPositions = [
@@ -41,14 +47,8 @@ if (fs.existsSync(roomsFilePath)) {
 
 // Функция сохранения комнат
 function saveRoomsToFile() {
-  try {
-      fs.writeFileSync(roomsFilePath, JSON.stringify(rooms, null, 2));
-      console.log("✅ Комнаты сохранены в файл");
-  } catch (err) {
-      console.error("❌ Ошибка при сохранении комнат:", err);
-  }
+  saveRoomsToSupabase(rooms);
 }
-
 // Проверка комнаты
 app.get("/check-room", (req, res) => {
   const { roomId } = req.query;
