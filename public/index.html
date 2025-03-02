@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.4/tesseract.min.js"></script>
+    <title>Сетевая игра</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #game-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        #board {
+            width: 600px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: auto;
+            position: relative;
+        }
+        #gameBoard {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .player {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            position: absolute;
+            transition: 0.5s ease-in-out;
+        }
+        .diamond {
+        width: 30px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.5);
+        position: absolute;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            text-align: center;
+            max-width: 60%;
+            max-height: 80%;
+            overflow: auto;
+        }
+        .modal img {
+            max-width: 100%;
+            max-height: 70vh;
+            height: auto;
+            border-radius: 5px;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .dice {
+    position: absolute;
+    left: calc(50% + 300px + 5rem); /* 50% - середина экрана, + 300px (половина ширины поля), + 5rem отступ */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 80px;
+    background: white;
+    border: 2px solid black;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+
+
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="board">
+            <img src="/images/board.jpg" id="gameBoard" />
+            <div class="players-container" id="playersContainer"></div>
+        </div>
+
+        <div class="dice" onclick="rollDice()">🎲</div>
+    </div>
+
+    <script>
+        const socket = io("http://localhost:3000");
+        let roomId = prompt("Введите код комнаты");
+        let myPlayerId = null;
+        let players = {};
+        let modalOpen = false;
+        const playerColors = ["red", "blue", "green", "yellow", "purple"]; // Разные цвета фишек
+    
+        const cells = [
+    { name: "Изначальный запрос и его модификация", xPercent: 10, yPercent: 80, widthPercent: 20, heightPercent: 10 },
+    { name: "Подсказки", xPercent: 35, yPercent: 75, widthPercent: 15, heightPercent: 8 },
+    { name: "Позиции", xPercent: 55, yPercent: 70, widthPercent: 20, heightPercent: 12 },
+    { name: "Члены семьи", xPercent: 50, yPercent: 75, widthPercent: 10, heightPercent: 6 },
+    { name: "Сказочные персонажи", xPercent: 55, yPercent: 75, widthPercent: 12, heightPercent: 6 },
+    { name: "Известные личности", xPercent: 65, yPercent: 75, widthPercent: 12, heightPercent: 6 },
+    { name: "Профессии", xPercent: 75, yPercent: 75, widthPercent: 10, heightPercent: 6 },
+    { name: "Персонажи из кино и литературы", xPercent: 85, yPercent: 75, widthPercent: 15, heightPercent: 6 },
+    { name: "Метафорические образы", xPercent: 90, yPercent: 70, widthPercent: 15, heightPercent: 6 },
+    { name: "Чувственный уровень 1", xPercent: 75, yPercent: 50, widthPercent: 20, heightPercent: 12 },
+    { name: "Любая карта", xPercent: 80, yPercent: 45, widthPercent: 10, heightPercent: 6 },
+    // { name: "Подсказки-тесты", xPercent: 75, yPercent: 40, widthPercent: 12, heightPercent: 6 },
+    {name: "Дорожные знаки", xPercent: 75, yPercent: 40, widthPercent: 12, heightPercent: 6 },
+    { name: "Волшебный грааль", xPercent: 85, yPercent: 40, widthPercent: 12, heightPercent: 6 },
+    { name: "Проблемы", xPercent: 90, yPercent: 35, widthPercent: 10, heightPercent: 6 },
+    { name: "Чувственный уровень 2", xPercent: 20, yPercent: 30, widthPercent: 20, heightPercent: 12 },
+    { name: "Вопросы ребенка", xPercent: 15, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Вопросы эксперта", xPercent: 25, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Вопросы подсознания", xPercent: 35, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Отгадка назад", xPercent: 45, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Провокация", xPercent: 60, yPercent: 20, widthPercent: 15, heightPercent: 8 },
+    { name: "Сверка запроса", xPercent: 45, yPercent: 15, widthPercent: 15, heightPercent: 8 },
+    { name: "Выход на реализацию запроса", xPercent: 80, yPercent: 15, widthPercent: 20, heightPercent: 10 }
+];
+
+    const imagesCover = {
+            "Дорожные знаки": "images/road-signs/cover.jpg"
+        };
+
+    
+if (roomId) {
+        socket.emit("joinRoom", roomId);
+    }
+
+    socket.on("updatePlayers", (serverPlayers) => {
+        document.querySelectorAll(".player").forEach(el => el.remove());
+        players = {};
+        
+        serverPlayers.forEach((player, index) => {
+            let playerDiv = document.createElement("div");
+            playerDiv.classList.add("player");
+            playerDiv.style.backgroundColor = playerColors[index % playerColors.length];
+            playerDiv.style.left = `${player.position.x}px`;
+            playerDiv.style.top = `${player.position.y}px`;
+            playerDiv.dataset.id = player.id;
+            players[player.id] = playerDiv;
+            
+            if (player.id === socket.id) {
+                myPlayerId = player.id;
+                playerDiv.id = "myPlayer";
+            }
+            
+            document.body.appendChild(playerDiv);
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+            if (event.target.classList.contains("dice")) return;
+            if (!modalOpen) {
+                let x = event.clientX - 15;
+                let y = event.clientY - 15;
+                socket.emit("movePlayer", { roomId, x, y });
+            }
+        });
+    document.addEventListener("dblclick", (event) => {
+        if (myPlayerId) {
+            let category = getCellAtClick(event.clientX, event.clientY);
+            if (category) {
+                showModalWithImage(category);
+            }
+        }
+    });
+
+    socket.on("playerMoved", ({ playerId, x, y }) => {
+        if (players[playerId]) {
+            players[playerId].style.left = `${x}px`;
+            players[playerId].style.top = `${y}px`;
+        }
+    });
+
+    function getCellAtClick(x, y) {
+        let gameBoard = document.getElementById("gameBoard");
+        let boardRect = gameBoard.getBoundingClientRect();
+        let xPercent = ((x - boardRect.left) / boardRect.width) * 100;
+        let yPercent = ((y - boardRect.top) / boardRect.height) * 100;
+
+        return cells.find(cell =>
+            xPercent >= cell.xPercent && xPercent <= cell.xPercent + cell.widthPercent &&
+            yPercent >= cell.yPercent && yPercent <= cell.yPercent + cell.heightPercent
+        )?.name || null;
+    }
+    function showModalWithImage(category, fromNetwork = false) {
+    if (modalOpen) return; // Если модалка уже открыта, не создаём её снова
+    modalOpen = true;
+
+    let overlay = document.createElement("div");
+    overlay.classList.add("modal-overlay");
+    overlay.innerHTML = `
+        <div class="modal">
+            <img src="${imagesCover[category]}" alt="Тема: ${category}" onclick="flipImage(this, '${category}')" />
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Если модалку открыл игрок, отправляем команду на сервер
+    if (!fromNetwork) {
+        socket.emit("openModal", { roomId, category });
+    }
+
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
+}
+
+// Закрытие модального окна
+function closeModal() {
+    let overlay = document.querySelector(".modal-overlay");
+    if (overlay) {
+        overlay.remove();
+        setTimeout(() => {
+            modalOpen = false;
+            socket.emit("closeModal", roomId); // Уведомляем сервер о закрытии
+        }, 100);
+    }
+}
+
+// Получаем событие с сервера и открываем модалку у всех
+socket.on("openModal", ({ category }) => {
+    showModalWithImage(category, true);
+});
+
+// Получаем событие о закрытии и закрываем модалку у всех
+socket.on("closeModal", () => {
+    closeModal();
+});
+
+function flipImage(imgElement, category) {
+    let newSrc;
+
+    if (imgElement.dataset.flipped === "true") {
+        newSrc = imagesCover[category];
+        imgElement.dataset.flipped = "false";
+    } else {
+        newSrc = getRandomImage(category);
+        imgElement.dataset.flipped = "true";
+    }
+
+    imgElement.src = newSrc;
+
+    // Отправляем команду на сервер, чтобы обновить у всех
+    socket.emit("flipImage", { roomId, category, newSrc, flipped: imgElement.dataset.flipped });
+}
+
+socket.on("flipImage", ({ category, newSrc, flipped }) => {
+    let imgElement = document.querySelector(".modal img");
+    if (imgElement) {
+        imgElement.src = newSrc;
+        imgElement.dataset.flipped = flipped;
+    }
+});
+
+
+
+    function getRandomImage(category) {
+        const images = {
+            "Члены семьи": ["images/family/family1.jpg", "images/family/family2.jpg"],
+            "Известные личности": ["images/celebrities/celeb1.jpg", "images/celebrities/celeb2.jpg"],
+            "Профессии": ["images/jobs/job1.jpg", "images/jobs/job2.jpg"],
+            "Провокация": ["images/provocation/prov1.jpg", "images/provocation/prov2.jpg"],
+            "Дорожные знаки": ["images/road-signs/2.jpg", "images/road-signs/4.jpg"]
+        };
+        let categoryImages = images[category] || ["images/default.jpg"];
+        return categoryImages[Math.floor(Math.random() * categoryImages.length)];
+    }
+    function rollDice() {
+            const diceElement = document.querySelector(".dice");
+            const roll = Math.floor(Math.random() * 6) + 1;
+            diceElement.innerText = roll;
+        }
+</script>
+</body>
+</html>
