@@ -15,14 +15,13 @@
             height: 100vh;
         }
         #game-container {
-            display: flex;
+            display: none; /* Скрываем интерфейс до проверки комнаты */
             align-items: center;
             width: 100%;
         }
-
         #board {
             width: 600px;
-            height: 100vh;
+            height: 1000px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -41,73 +40,29 @@
             position: absolute;
             transition: 0.5s ease-in-out;
         }
-        .diamond {
-        width: 30px;
-        height: 30px;
-        background: rgba(255, 255, 255, 0.5);
-        position: absolute;
-        border-radius: 50%;
-        cursor: pointer;
-    }
-    .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+        .dice {
+            position: absolute;
+            left: calc(50% + 300px + 5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 2px solid black;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
-        }
-        .modal {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            text-align: center;
-            max-width: 60%;
-            max-height: 80%;
-            overflow: auto;
-        }
-        .modal img {
-            max-width: 100%;
-            max-height: 70vh;
-            height: auto;
-            border-radius: 5px;
-        }
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            cursor: pointer;
-            font-size: 20px;
+            font-size: 36px;
             font-weight: bold;
-            color: #333;
+            cursor: pointer;
         }
-        .dice {
-    position: absolute;
-    left: calc(50% + 300px + 5rem); /* 50% - середина экрана, + 300px (половина ширины поля), + 5rem отступ */
-    top: 50%;
-    transform: translateY(-50%);
-    width: 80px;
-    height: 80px;
-    background: white;
-    border: 2px solid black;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 36px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-
-
-
+        #error-message {
+            color: red;
+            font-size: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -118,45 +73,68 @@
         </div>
         <div class="dice" onclick="rollDice()">🎲</div>
     </div>
+    <div id="error-message"></div>
 
     <script>
         const socket = io(window.location.origin);
-        let roomId = prompt("Введите код комнаты");
+        let roomId = null;
         let myPlayerId = null;
         let players = {};
         let modalOpen = false;
         const playerColors = ["red", "blue", "green", "yellow", "purple"];
 
-        const cells = [
-            // Ваши ячейки остаются без изменений
-        ];
+        // Получаем roomId из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        roomId = urlParams.get("roomId");
 
-        const imagesCover = {
-            "Дорожные знаки": "images/road-signs/cover.jpg"
-        };
+        // Проверяем, существует ли комната
+        async function checkRoomExists(roomId) {
+            try {
+                const response = await fetch(`/check-room?roomId=${roomId}`);
+                if (!response.ok) {
+                    throw new Error("Ошибка сети");
+                }
+                const data = await response.json();
+                return data.exists;
+            } catch (error) {
+                console.error("Ошибка при проверке комнаты:", error);
+                return false;
+            }
+        }
 
-        // Проверка roomId
-        if (!roomId) {
-            alert("Код комнаты не может быть пустым.");
-            window.location.reload(); // Перезагружаем страницу
-        } else {
+        // Основная функция инициализации
+        async function initializeGame() {
+            if (!roomId) {
+                document.getElementById("error-message").innerText = "Код комнаты не указан в URL.";
+                return;
+            }
+
+            const roomExists = await checkRoomExists(roomId);
+            if (!roomExists) {
+                document.getElementById("error-message").innerText = "Комната не найдена. Пожалуйста, проверьте код комнаты.";
+                return;
+            }
+
+            // Если комната существует, показываем интерфейс и подключаемся
+            document.getElementById("game-container").style.display = "flex";
             socket.emit("joinRoom", roomId);
         }
 
+        // Запускаем инициализацию при загрузке страницы
+        initializeGame();
+
         // Обработка ошибок подключения
         socket.on("roomNotFound", ({ message }) => {
-            alert(message);
-            window.location.reload(); // Перезагружаем страницу
+            document.getElementById("error-message").innerText = message;
         });
 
         socket.on("roomFull", ({ message }) => {
-            alert(message);
-            window.location.reload(); // Перезагружаем страницу
+            document.getElementById("error-message").innerText = message;
         });
 
         // Обработка отключения от сервера
         socket.on("disconnect", () => {
-            alert("Соединение с сервером потеряно. Пожалуйста, перезагрузите страницу.");
+            document.getElementById("error-message").innerText = "Соединение с сервером потеряно. Пожалуйста, перезагрузите страницу.";
         });
 
         // Обновление игроков
