@@ -126,9 +126,20 @@ io.on("connection", (socket) => {
   // Присоединение к комнате
   socket.on("joinRoom", (roomId) => {
     if (!roomId) return;
-    if (!rooms[roomId]) rooms[roomId] = { players: [], deck: shuffleDeck() };
 
-    // Назначаем цвет и позицию фишки (располагаем рядом)
+    // Проверяем, существует ли комната в savedRooms
+    const roomExists = savedRooms.some((room) => room.roomId === roomId);
+    if (!roomExists) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" }); // Уведомляем клиента
+      return;
+    }
+
+    // Если комната существует, создаем её в памяти (если ещё не создана)
+    if (!rooms[roomId]) {
+      rooms[roomId] = { players: [], deck: shuffleDeck() };
+    }
+
+    // Назначаем цвет и позицию фишки
     const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
     const playerData = {
       id: socket.id,
@@ -148,6 +159,11 @@ io.on("connection", (socket) => {
 
   // Бросок кубика и передвижение фишки
   socket.on("rollDice", (roomId) => {
+    if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+    }
+
     const roll = Math.floor(Math.random() * 6) + 1;
     const player = rooms[roomId].players.find((p) => p.id === socket.id);
 
@@ -159,6 +175,11 @@ io.on("connection", (socket) => {
 
   // Ход фишкой
   socket.on("movePlayer", ({ roomId, x, y }) => {
+    if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+    }
+
     const player = rooms[roomId]?.players.find((p) => p.id === socket.id);
     if (player) {
       player.position = { x, y };
