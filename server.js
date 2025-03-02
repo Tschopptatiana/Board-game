@@ -1,12 +1,12 @@
+import fs from "fs";
+console.log("Файлы в корневой папке:", fs.readdirSync("./"));
+console.log("Файлы в src (если есть):", fs.readdirSync("./src"));
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
-console.log("Файлы в папке:", fs.readdirSync("./"));
-
 import dotenv from "dotenv";
 import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase.js";
 
