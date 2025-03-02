@@ -3,250 +3,183 @@ import { fileURLToPath } from "url";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
-import { v4 as uuidv4 } from "uuid"; // Для генерации уникальных ID
-import fs from "fs"; // Для работы с файлами
-import dotenv from "dotenv"; // Для работы с переменными окружения
+import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
+import dotenv from "dotenv";
 
-// Загружаем переменные окружения
 dotenv.config();
 
-// Определяем директорию проекта
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json()); // Для обработки JSON-запросов
-app.use(express.static(path.join(__dirname, "public"))); // Раздаём статические файлы
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
-const rooms = {}; // Активные комнаты в памяти
+let rooms = {}; // Должно быть `let`, а не `const`
+
 const playerColors = ["red", "blue", "green", "yellow", "purple"];
 const startPositions = [
-  { x: 100, y: 100 }, // Первая фишка
-  { x: 200, y: 200 }, // Вторая фишка (сдвиг на 100px)
-  { x: 300, y: 100 },
-  { x: 400, y: 100 },
-  { x: 500, y: 100 }
+  { x: 100, y: 100 }, { x: 200, y: 200 }, { x: 300, y: 100 },
+  { x: 400, y: 100 }, { x: 500, y: 100 }
 ];
 
-// Файл для хранения комнат
 const roomsFilePath = path.join(__dirname, "rooms.json");
 
-// Создаем файл rooms.json, если он не существует
-if (!fs.existsSync(roomsFilePath)) {
+// Загружаем комнаты из файла при старте сервера
+if (fs.existsSync(roomsFilePath)) {
   try {
-    fs.writeFileSync(roomsFilePath, JSON.stringify([]));
+      const data = fs.readFileSync(roomsFilePath, "utf-8");
+      rooms = data ? JSON.parse(data) : {};
+      console.log("✅ Загружены комнаты из файла");
   } catch (err) {
-    console.error("Ошибка при создании файла rooms.json:", err);
+      console.error("❌ Ошибка при загрузке комнат, создаем пустой объект:", err);
+      rooms = {};
   }
 }
 
-// Загрузка существующих комнат из файла
-let savedRooms = [];
-try {
-  savedRooms = JSON.parse(fs.readFileSync(roomsFilePath, "utf-8"));
-} catch (err) {
-  console.error("Ошибка при чтении файла rooms.json:", err);
-}
-
-// Сохранение комнат в файл
+// Функция сохранения комнат
 function saveRoomsToFile() {
   try {
-    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+      fs.writeFileSync(roomsFilePath, JSON.stringify(rooms, null, 2));
+      console.log("✅ Комнаты сохранены в файл");
   } catch (err) {
-    console.error("Ошибка при сохранении комнат в файл:", err);
+      console.error("❌ Ошибка при сохранении комнат:", err);
   }
 }
 
-// Маршрут для отдачи create-room.html
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "create-room.html"));
+// Проверка комнаты
+app.get("/check-room", (req, res) => {
+  const { roomId } = req.query;
+  res.json({ exists: rooms.hasOwnProperty(roomId) });
 });
 
-// Endpoint для создания комнаты (доступен только вам)
+// Создание комнаты
 app.post("/create-room", (req, res) => {
-  const { password } = req.body;
-
-  // Проверка пароля
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(403).json({ error: "Доступ запрещен" });
+  if (req.body.password !== process.env.ADMIN_PASSWORD) {
+      return res.status(403).json({ error: "Доступ запрещен" });
   }
 
-  // Генерация уникального roomId
   const roomId = uuidv4();
-  savedRooms.push({ roomId, createdAt: new Date() });
+  rooms[roomId] = { players: [], createdAt: new Date() };
 
-  // Сохранение комнат в файл
   saveRoomsToFile();
   res.json({ roomId });
 });
 
-// Endpoint для проверки комнаты
-app.get("/check-room", (req, res) => {
-  const { roomId } = req.query;
-
-  if (!roomId) {
-    return res.status(400).json({ error: "Room ID is required" });
-  }
-
-  const roomExists = savedRooms.some((room) => room.roomId === roomId);
-  res.json({ exists: roomExists });
-});
-
-// Endpoint для удаления комнаты
+// Удаление комнаты
 app.delete("/delete-room", (req, res) => {
-  const { roomId, password } = req.body;
-
-  // Проверка пароля
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(403).json({ error: "Доступ запрещен" });
+  if (req.body.password !== process.env.ADMIN_PASSWORD) {
+      return res.status(403).json({ error: "Доступ запрещен" });
   }
 
-  // Проверка, существует ли комната
-  if (!savedRooms.some((room) => room.roomId === roomId)) {
-    return res.status(404).json({ error: "Комната не найдена" });
+  if (!rooms[req.body.roomId]) {
+      return res.status(404).json({ error: "Комната не найдена" });
   }
 
-  // Удаление комнаты из сохраненных комнат
-  savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
+  io.to(req.body.roomId).emit("roomDeleted", { message: "Комната удалена" });
+  delete rooms[req.body.roomId];
   saveRoomsToFile();
 
-  // Удаление комнаты из активных комнат в памяти
-  if (rooms[roomId]) {
-    // Уведомление всех игроков в комнате
-    io.to(roomId).emit("roomDeleted", { message: "Комната удалена администратором" });
-    delete rooms[roomId];
-    console.log(`Комната ${roomId} удалена из памяти`);
-  } else {
-    console.log(`Комната ${roomId} не найдена в памяти`);
-  }
-
-  res.json({ success: true, message: `Комната ${roomId} удалена` });
+  res.json({ success: true });
 });
 
 // Логика Socket.IO
 io.on("connection", (socket) => {
   console.log("Игрок подключился", socket.id);
 
-  // Присоединение к комнате
-  socket.on("joinRoom", (roomId) => {
-    if (!roomId) {
+// Присоединение к комнате
+socket.on("joinRoom", (roomId) => {
+  if (!roomId) {
       socket.emit("roomNotFound", { message: "Room ID is required" });
       return;
-    }
+  }
 
-    // Проверяем, существует ли комната в savedRooms
-    const roomExists = savedRooms.some((room) => room.roomId === roomId);
-    if (!roomExists) {
+  if (!rooms[roomId]) {
       socket.emit("roomNotFound", { message: "Комната не найдена" });
       return;
-    }
+  }
 
-    // Если комната существует, создаем её в памяти (если ещё не создана)
-    if (!rooms[roomId]) {
-      rooms[roomId] = { players: [], deck: shuffleDeck() };
-    }
-
-    // Проверяем, не превышено ли максимальное количество игроков
-    if (rooms[roomId].players.length >= playerColors.length) {
+  if (rooms[roomId].players.length >= playerColors.length) {
       socket.emit("roomFull", { message: "Комната заполнена" });
       return;
-    }
+  }
 
-    // Назначаем цвет и позицию фишки
-    const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
-    const playerData = {
+  const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
+  const playerData = {
       id: socket.id,
       color: playerColor,
       position: {
-        x: startPositions[rooms[roomId].players.length % playerColors.length].x,
-        y: startPositions[rooms[roomId].players.length % playerColors.length].y,
+          x: startPositions[rooms[roomId].players.length % playerColors.length].x,
+          y: startPositions[rooms[roomId].players.length % playerColors.length].y,
       },
-    };
+  };
 
-    rooms[roomId].players.push(playerData);
-    socket.join(roomId);
+  rooms[roomId].players.push(playerData);
+  socket.join(roomId);
+  saveRoomsToFile();
 
-    // Отправляем обновлённый список игроков всем
-    io.to(roomId).emit("updatePlayers", rooms[roomId].players);
-  });
-
-  // Обработка перемещения игрока
-  socket.on("movePlayer", ({ roomId, xPercent, yPercent }) => {
-    if (!rooms[roomId]) {
-        socket.emit("roomNotFound", { message: "Комната не найдена" });
-        return;
-    }
-
-    const player = rooms[roomId].players.find((p) => p.id === socket.id);
-    if (player) {
-        player.position = { xPercent, yPercent }; // Сохраняем в процентах
-        io.to(roomId).emit("updatePlayers", rooms[roomId].players);
-    }
+  io.to(roomId).emit("updatePlayers", rooms[roomId].players);
 });
 
-  socket.on("rollDice", ({ roomId, roll }) => {
-    if (!rooms[roomId]) {
-        socket.emit("roomNotFound", { message: "Комната не найдена" });
-        return;
-    }
-
-    io.to(roomId).emit("rollDiceResult", { roll }); // Отправляем результат всем игрокам
-});
-
-
-  // Открытие модального окна
-  socket.on("openModal", ({ roomId, category }) => {
-    if (!rooms[roomId]) {
+// Обработка перемещения игрока
+socket.on("movePlayer", ({ roomId, xPercent, yPercent }) => {
+  if (!rooms[roomId]) {
       socket.emit("roomNotFound", { message: "Комната не найдена" });
       return;
-    }
+  }
 
-    // Рассылаем событие открытия модального окна всем игрокам в комнате
-    io.to(roomId).emit("openModal", { category });
-  });
-
-  // Закрытие модального окна
-  socket.on("closeModal", (roomId) => {
-    if (!rooms[roomId]) {
-      socket.emit("roomNotFound", { message: "Комната не найдена" });
-      return;
-    }
-
-    // Рассылаем событие закрытия модального окна всем игрокам в комнате
-    io.to(roomId).emit("closeModal");
-  });
-
-     // Переворот изображения у всех игроков
-     socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
-      if (!rooms[roomId]) {
-        socket.emit("roomNotFound", { message: "Комната не найдена" });
-        return;
-      }
-      io.to(roomId).emit("flipImage", { category, newSrc, flipped });
-  });
-
-  
-
-  // Обработка отключения игрока
-  socket.on("disconnect", () => {
-    for (const roomId in rooms) {
-      rooms[roomId].players = rooms[roomId].players.filter((p) => p.id !== socket.id);
+  const player = rooms[roomId].players.find((p) => p.id === socket.id);
+  if (player) {
+      player.position = { xPercent, yPercent };
       io.to(roomId).emit("updatePlayers", rooms[roomId].players);
-    }
-  });
+  }
 });
 
-// Функция для перемешивания карточек
-function shuffleDeck() {
-  return ["Карточка 1", "Карточка 2", "Карточка 3"].sort(() => Math.random() - 0.5);
-}
+socket.on("rollDice", ({ roomId, roll }) => {
+  if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+  }
 
-// Раздаём index.html при заходе на "/"
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  io.to(roomId).emit("rollDiceResult", { roll });
+});
+
+// Открытие модального окна
+socket.on("openModal", ({ roomId, category }) => {
+  if (!rooms[roomId]) {
+    socket.emit("roomNotFound", { message: "Комната не найдена" });
+    return;
+  }
+  io.to(roomId).emit("openModal", { category });
+});
+
+// Закрытие модального окна
+socket.on("closeModal", (roomId) => {
+  if (!rooms[roomId]) {
+    socket.emit("roomNotFound", { message: "Комната не найдена" });
+    return;
+  }
+  io.to(roomId).emit("closeModal");
+});
+
+// Переворот изображения
+socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
+  if (!rooms[roomId]) {
+    socket.emit("roomNotFound", { message: "Комната не найдена" });
+    return;
+  }
+  io.to(roomId).emit("flipImage", { category, newSrc, flipped });
+});
+
+// Отключение игрока
+socket.on("disconnect", () => {
+  for (const roomId in rooms) {
+    rooms[roomId].players = rooms[roomId].players.filter((p) => p.id !== socket.id);
+    io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+  }
+});
 });
 
 // Запуск сервера
