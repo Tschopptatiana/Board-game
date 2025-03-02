@@ -121,7 +121,7 @@
     </div>
 
     <script>
-    const socket = io("https://board-game-36vt.onrender.com");
+const socket = io(window.location.origin);
         let roomId = prompt("Введите код комнаты");
         let myPlayerId = null;
         let players = {};
