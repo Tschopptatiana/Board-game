@@ -51,6 +51,15 @@ try {
   console.error("Ошибка при чтении файла rooms.json:", err);
 }
 
+// Сохранение комнат в файл
+function saveRoomsToFile() {
+  try {
+    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+  } catch (err) {
+    console.error("Ошибка при сохранении комнат в файл:", err);
+  }
+}
+
 // Маршрут для отдачи create-room.html
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "create-room.html"));
@@ -70,13 +79,8 @@ app.post("/create-room", (req, res) => {
   savedRooms.push({ roomId, createdAt: new Date() });
 
   // Сохранение комнат в файл
-  try {
-    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
-    res.json({ roomId });
-  } catch (err) {
-    console.error("Ошибка при сохранении комнаты:", err);
-    res.status(500).json({ error: "Ошибка сервера" });
-  }
+  saveRoomsToFile();
+  res.json({ roomId });
 });
 
 // Endpoint для проверки комнаты
@@ -107,12 +111,7 @@ app.delete("/delete-room", (req, res) => {
 
   // Удаление комнаты из сохраненных комнат
   savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
-  try {
-    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
-  } catch (err) {
-    console.error("Ошибка при сохранении файла:", err);
-    return res.status(500).json({ error: "Ошибка сервера" });
-  }
+  saveRoomsToFile();
 
   // Удаление комнаты из активных комнат в памяти
   if (rooms[roomId]) {
@@ -174,59 +173,41 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("updatePlayers", rooms[roomId].players);
   });
 
-  // Бросок кубика и передвижение фишки
-  socket.on("rollDice", (roomId) => {
+  // Обработка перемещения игрока
+  socket.on("movePlayer", ({ roomId, x, y }) => {
     if (!rooms[roomId]) {
       socket.emit("roomNotFound", { message: "Комната не найдена" });
       return;
     }
 
-    const roll = Math.floor(Math.random() * 6) + 1;
     const player = rooms[roomId].players.find((p) => p.id === socket.id);
-
     if (player) {
-      // Обновляем позицию игрока
-      player.position.x += roll * 50; // Пример: сдвигаем на 50px за каждый пункт кубика
-      player.position.y += roll * 50;
-      io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+      player.position = { x, y }; // Обновляем позицию игрока
+      io.to(roomId).emit("updatePlayers", rooms[roomId].players); // Рассылаем обновление всем
     }
   });
 
-      // Обработка перемещения игрока
-      socket.on("movePlayer", ({ roomId, x, y }) => {
-        if (!rooms[roomId]) {
-            socket.emit("roomNotFound", { message: "Комната не найдена" });
-            return;
-        }
+  // Открытие модального окна
+  socket.on("openModal", ({ roomId, category }) => {
+    if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+    }
 
-        const player = rooms[roomId].players.find((p) => p.id === socket.id);
-        if (player) {
-            player.position = { x, y }; // Обновляем позицию игрока
-            io.to(roomId).emit("updatePlayers", rooms[roomId].players); // Рассылаем обновление всем
-        }
-    });
+    // Рассылаем событие открытия модального окна всем игрокам в комнате
+    io.to(roomId).emit("openModal", { category });
+  });
 
-        // Открытие модального окна
-        socket.on("openModal", ({ roomId, category }) => {
-          if (!rooms[roomId]) {
-              socket.emit("roomNotFound", { message: "Комната не найдена" });
-              return;
-          }
-  
-          // Рассылаем событие открытия модального окна всем игрокам в комнате
-          io.to(roomId).emit("openModal", { category });
-      });
-  
-      // Закрытие модального окна
-      socket.on("closeModal", (roomId) => {
-          if (!rooms[roomId]) {
-              socket.emit("roomNotFound", { message: "Комната не найдена" });
-              return;
-          }
-  
-          // Рассылаем событие закрытия модального окна всем игрокам в комнате
-          io.to(roomId).emit("closeModal");
-      });
+  // Закрытие модального окна
+  socket.on("closeModal", (roomId) => {
+    if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+    }
+
+    // Рассылаем событие закрытия модального окна всем игрокам в комнате
+    io.to(roomId).emit("closeModal");
+  });
 
   // Обработка отключения игрока
   socket.on("disconnect", () => {
