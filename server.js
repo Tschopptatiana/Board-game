@@ -91,19 +91,22 @@ app.delete("/delete-room", (req, res) => {
     return res.status(403).json({ error: "Доступ запрещен" });
   }
 
-  // Удаление комнаты из сохраненных комнат
-  savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
-
-  // Сохранение обновленного списка комнат
-  try {
-    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
-  } catch (err) {
-    console.error("Ошибка при удалении комнаты:", err);
-    return res.status(500).json({ error: "Ошибка сервера" });
+  // Проверка, существует ли комната
+  if (!savedRooms.some((room) => room.roomId === roomId)) {
+    return res.status(404).json({ error: "Комната не найдена" });
   }
 
+  // Удаление комнаты из сохраненных комнат
+  savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
+  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+
   // Удаление комнаты из активных комнат в памяти
-  delete rooms[roomId];
+  if (rooms[roomId]) {
+    delete rooms[roomId];
+    console.log(`Комната ${roomId} удалена из памяти`);
+  } else {
+    console.log(`Комната ${roomId} не найдена в памяти`);
+  }
 
   // Уведомление всех игроков в комнате
   io.to(roomId).emit("roomDeleted", { message: "Комната удалена администратором" });
