@@ -82,6 +82,30 @@
         let players = {};
         let modalOpen = false;
         const playerColors = ["red", "blue", "green", "yellow", "purple"];
+        const cells = [
+    { name: "Изначальный запрос и его модификация", xPercent: 10, yPercent: 80, widthPercent: 20, heightPercent: 10 },
+    { name: "Подсказки", xPercent: 35, yPercent: 75, widthPercent: 15, heightPercent: 8 },
+    { name: "Позиции", xPercent: 55, yPercent: 70, widthPercent: 20, heightPercent: 12 },
+    { name: "Члены семьи", xPercent: 50, yPercent: 75, widthPercent: 10, heightPercent: 6 },
+    { name: "Сказочные персонажи", xPercent: 55, yPercent: 75, widthPercent: 12, heightPercent: 6 },
+    { name: "Известные личности", xPercent: 65, yPercent: 75, widthPercent: 12, heightPercent: 6 },
+    { name: "Профессии", xPercent: 75, yPercent: 75, widthPercent: 10, heightPercent: 6 },
+    { name: "Персонажи из кино и литературы", xPercent: 85, yPercent: 75, widthPercent: 15, heightPercent: 6 },
+    { name: "Метафорические образы", xPercent: 90, yPercent: 70, widthPercent: 15, heightPercent: 6 },
+    { name: "Чувственный уровень 1", xPercent: 75, yPercent: 50, widthPercent: 20, heightPercent: 12 },
+    { name: "Любая карта", xPercent: 80, yPercent: 45, widthPercent: 10, heightPercent: 6 },
+    { name: "Дорожные знаки", xPercent: 75, yPercent: 40, widthPercent: 12, heightPercent: 6 },
+    { name: "Волшебный грааль", xPercent: 85, yPercent: 40, widthPercent: 12, heightPercent: 6 },
+    { name: "Проблемы", xPercent: 90, yPercent: 35, widthPercent: 10, heightPercent: 6 },
+    { name: "Чувственный уровень 2", xPercent: 20, yPercent: 30, widthPercent: 20, heightPercent: 12 },
+    { name: "Вопросы ребенка", xPercent: 15, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Вопросы эксперта", xPercent: 25, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Вопросы подсознания", xPercent: 35, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Отгадка назад", xPercent: 45, yPercent: 25, widthPercent: 10, heightPercent: 6 },
+    { name: "Провокация", xPercent: 60, yPercent: 20, widthPercent: 15, heightPercent: 8 },
+    { name: "Сверка запроса", xPercent: 45, yPercent: 15, widthPercent: 15, heightPercent: 8 },
+    { name: "Выход на реализацию запроса", xPercent: 80, yPercent: 15, widthPercent: 20, heightPercent: 10 }
+];
 
         // Получаем roomId из URL
         const urlParams = new URLSearchParams(window.location.search);
