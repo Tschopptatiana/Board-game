@@ -199,14 +199,14 @@
     players = {};
 
     let gameBoard = document.getElementById("gameBoard");
-    let boardRect = gameBoard.getBoundingClientRect();
 
     serverPlayers.forEach((player, index) => {
         let playerDiv = document.createElement("div");
         playerDiv.classList.add("player");
         playerDiv.style.backgroundColor = playerColors[index % playerColors.length];
 
-        // Пересчитываем относительные координаты в пиксели
+        // Вычисляем координаты заново для каждого игрока
+        let boardRect = gameBoard.getBoundingClientRect();
         playerDiv.style.left = `${(player.position.xPercent / 100) * boardRect.width}px`;
         playerDiv.style.top = `${(player.position.yPercent / 100) * boardRect.height}px`;
 
@@ -221,6 +221,7 @@
         document.getElementById("board").appendChild(playerDiv);
     });
 });
+
 
 
         // Перемещение игрока
@@ -245,14 +246,6 @@
                 if (category) {
                     showModalWithImage(category);
                 }
-            }
-        });
-
-        // Обработка перемещения других игроков
-        socket.on("playerMoved", ({ playerId, x, y }) => {
-            if (players[playerId]) {
-                players[playerId].style.left = `${x}px`;
-                players[playerId].style.top = `${y}px`;
             }
         });
 

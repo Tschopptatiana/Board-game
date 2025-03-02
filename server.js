@@ -174,18 +174,18 @@ io.on("connection", (socket) => {
   });
 
   // Обработка перемещения игрока
-  socket.on("movePlayer", ({ roomId, x, y }) => {
+  socket.on("movePlayer", ({ roomId, xPercent, yPercent }) => {
     if (!rooms[roomId]) {
-      socket.emit("roomNotFound", { message: "Комната не найдена" });
-      return;
+        socket.emit("roomNotFound", { message: "Комната не найдена" });
+        return;
     }
 
     const player = rooms[roomId].players.find((p) => p.id === socket.id);
     if (player) {
-      player.position = { x, y }; // Обновляем позицию игрока
-      io.to(roomId).emit("updatePlayers", rooms[roomId].players); // Рассылаем обновление всем
+        player.position = { xPercent, yPercent }; // Сохраняем в процентах
+        io.to(roomId).emit("updatePlayers", rooms[roomId].players);
     }
-  });
+});
 
   socket.on("rollDice", ({ roomId, roll }) => {
     if (!rooms[roomId]) {
@@ -227,6 +227,8 @@ io.on("connection", (socket) => {
       }
       io.to(roomId).emit("flipImage", { category, newSrc, flipped });
   });
+
+  
 
   // Обработка отключения игрока
   socket.on("disconnect", () => {
