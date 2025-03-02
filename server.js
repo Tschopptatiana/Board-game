@@ -187,6 +187,19 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("rollDice", (roomId, roll) => {
+    if (!rooms[roomId]) {
+      socket.emit("roomNotFound", { message: "Комната не найдена" });
+      return;
+    }
+    const player = rooms[roomId].players.find((p) => p.id === socket.id);
+
+    if (player) {
+      player.position += roll; // Обновляем позицию игрока
+      io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+    }
+  });
+
   // Открытие модального окна
   socket.on("openModal", ({ roomId, category }) => {
     if (!rooms[roomId]) {

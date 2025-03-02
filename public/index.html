@@ -303,11 +303,6 @@
             closeModal();
         });
 
-           // Переворот изображения у всех игроков
-   socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
-    io.to(roomId).emit("flipImage", { category, newSrc, flipped });
-});
-
         // Переворот изображения
         function flipImage(imgElement, category) {
             let newSrc;
@@ -350,6 +345,7 @@
             const diceElement = document.querySelector(".dice");
             const roll = Math.floor(Math.random() * 6) + 1;
             diceElement.innerText = roll;
+            socket.emit("rollDice", roomId, roll);
         }
     </script>
 </body>
