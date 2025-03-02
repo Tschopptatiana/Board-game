@@ -218,13 +218,18 @@
 
         // Перемещение игрока
         document.addEventListener("click", (event) => {
-            if (event.target.classList.contains("dice")) return;
-            if (!modalOpen) {
-                let x = event.clientX - 15;
-                let y = event.clientY - 15;
-                socket.emit("movePlayer", { roomId, x, y });
-            }
-        });
+    if (event.target.classList.contains("dice")) return;
+    if (!modalOpen) {
+        let gameBoard = document.getElementById("gameBoard");
+        let boardRect = gameBoard.getBoundingClientRect();
+
+        let xPercent = ((event.clientX - boardRect.left) / boardRect.width) * 100;
+        let yPercent = ((event.clientY - boardRect.top) / boardRect.height) * 100;
+
+        socket.emit("movePlayer", { roomId, xPercent, yPercent });
+    }
+});
+
 
         // Открытие модального окна
         document.addEventListener("dblclick", (event) => {
