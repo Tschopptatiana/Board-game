@@ -3,10 +3,17 @@ import { fileURLToPath } from "url";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
+import { v4 as uuidv4 } from "uuid"; // Для генерации уникальных ID
+import fs from "fs"; // Для работы с файлами
+import dotenv from "dotenv"; // Для работы с переменными окружения
+
+// Загружаем переменные окружения
+dotenv.config();
 
 // Определяем директорию проекта
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.use(express.json()); // Для обработки JSON-запросов
 app.use(express.static(path.join(__dirname, "public"))); // Раздаём статические файлы
 
 const server = http.createServer(app);
@@ -14,7 +21,7 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
-const rooms = {};
+const rooms = {}; // Активные комнаты в памяти
 const playerColors = ["red", "blue", "green", "yellow", "purple"];
 const startPositions = [
   { x: 100, y: 100 }, // Первая фишка
@@ -24,7 +31,64 @@ const startPositions = [
   { x: 500, y: 100 }
 ];
 
+// Файл для хранения комнат
+const roomsFilePath = path.join(__dirname, "rooms.json");
 
+// Загрузка существующих комнат из файла (если файл есть)
+let savedRooms = [];
+if (fs.existsSync(roomsFilePath)) {
+  savedRooms = JSON.parse(fs.readFileSync(roomsFilePath, "utf-8"));
+}
+
+// Endpoint для создания комнаты (доступен только вам)
+app.post("/create-room", (req, res) => {
+  const { password } = req.body;
+
+  // Проверка пароля
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(403).json({ error: "Доступ запрещен" });
+  }
+
+  // Генерация уникального roomId
+  const roomId = uuidv4();
+  savedRooms.push({ roomId, createdAt: new Date() });
+
+  // Сохранение комнат в файл
+  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+
+  res.json({ roomId });
+});
+
+// Endpoint для проверки комнаты
+app.get("/check-room", (req, res) => {
+  const { roomId } = req.query;
+  const roomExists = savedRooms.some((room) => room.roomId === roomId);
+  res.json({ exists: roomExists });
+});
+
+// Endpoint для удаления комнаты
+app.delete("/delete-room", (req, res) => {
+  const { roomId, password } = req.body;
+
+  // Проверка пароля
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(403).json({ error: "Доступ запрещен" });
+  }
+
+  // Удаление комнаты из сохраненных комнат
+  savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
+  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+
+  // Удаление комнаты из активных комнат в памяти
+  delete rooms[roomId];
+
+  // Уведомление всех игроков в комнате
+  io.to(roomId).emit("roomDeleted", { message: "Комната удалена администратором" });
+
+  res.json({ success: true, message: `Комната ${roomId} удалена` });
+});
+
+// Логика Socket.IO
 io.on("connection", (socket) => {
   console.log("Игрок подключился", socket.id);
 
@@ -32,7 +96,6 @@ io.on("connection", (socket) => {
   socket.on("requestAutoJoin", (roomId) => {
     socket.emit("joinRoom", roomId);
   });
-
 
   // Присоединение к комнате
   socket.on("joinRoom", (roomId) => {
@@ -44,7 +107,10 @@ io.on("connection", (socket) => {
     const playerData = {
       id: socket.id,
       color: playerColor,
-      position: { x: startPositions[rooms[roomId].players.length % playerColors.length].x, y: startPositions[rooms[roomId].players.length % playerColors.length].y }
+      position: {
+        x: startPositions[rooms[roomId].players.length % playerColors.length].x,
+        y: startPositions[rooms[roomId].players.length % playerColors.length].y,
+      },
     };
 
     rooms[roomId].players.push(playerData);
@@ -67,13 +133,12 @@ io.on("connection", (socket) => {
 
   // Ход фишкой
   socket.on("movePlayer", ({ roomId, x, y }) => {
-    const player = rooms[roomId]?.players.find(p => p.id === socket.id);
+    const player = rooms[roomId]?.players.find((p) => p.id === socket.id);
     if (player) {
-        player.position = { x, y };
-        io.to(roomId).emit("playerMoved", { playerId: socket.id, x, y });
+      player.position = { x, y };
+      io.to(roomId).emit("playerMoved", { playerId: socket.id, x, y });
     }
-});
-
+  });
 
   // Обработка отключения игрока
   socket.on("disconnect", () => {
@@ -83,24 +148,21 @@ io.on("connection", (socket) => {
     }
   });
 
-   // Открытие модального окна по команде
-   socket.on("openModal", ({ roomId, category }) => {
+  // Открытие модального окна по команде
+  socket.on("openModal", ({ roomId, category }) => {
     io.to(roomId).emit("openModal", { category }); // Отправляем всем в комнате
-});
+  });
 
-// Закрытие модального окна по команде
-socket.on("closeModal", (roomId) => {
+  // Закрытие модального окна по команде
+  socket.on("closeModal", (roomId) => {
     io.to(roomId).emit("closeModal"); // Закрываем у всех
-});
+  });
 
-   // Переворот изображения у всех игроков
-   socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
+  // Переворот изображения у всех игроков
+  socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
     io.to(roomId).emit("flipImage", { category, newSrc, flipped });
+  });
 });
-});
-
-
-
 
 // Функция для перемешивания карточек
 function shuffleDeck() {
@@ -113,4 +175,5 @@ app.get("/", (req, res) => {
 });
 
 // Запуск сервера
-server.listen(3000, () => console.log("✅ Сервер запущен на порту 3000"));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`✅ Сервер запущен на порту ${PORT}`));
