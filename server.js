@@ -6,7 +6,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
-import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./ supabase";
+import { saveRoomsToSupabase, loadRoomsFromSupabase } from "./supabase";
 
 dotenv.config();
 
