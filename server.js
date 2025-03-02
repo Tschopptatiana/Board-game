@@ -209,6 +209,15 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("closeModal");
   });
 
+     // Переворот изображения у всех игроков
+     socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
+      if (!rooms[roomId]) {
+        socket.emit("roomNotFound", { message: "Комната не найдена" });
+        return;
+      }
+      io.to(roomId).emit("flipImage", { category, newSrc, flipped });
+  });
+
   // Обработка отключения игрока
   socket.on("disconnect", () => {
     for (const roomId in rooms) {
