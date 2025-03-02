@@ -192,6 +192,42 @@ io.on("connection", (socket) => {
     }
   });
 
+      // Обработка перемещения игрока
+      socket.on("movePlayer", ({ roomId, x, y }) => {
+        if (!rooms[roomId]) {
+            socket.emit("roomNotFound", { message: "Комната не найдена" });
+            return;
+        }
+
+        const player = rooms[roomId].players.find((p) => p.id === socket.id);
+        if (player) {
+            player.position = { x, y }; // Обновляем позицию игрока
+            io.to(roomId).emit("updatePlayers", rooms[roomId].players); // Рассылаем обновление всем
+        }
+    });
+
+        // Открытие модального окна
+        socket.on("openModal", ({ roomId, category }) => {
+          if (!rooms[roomId]) {
+              socket.emit("roomNotFound", { message: "Комната не найдена" });
+              return;
+          }
+  
+          // Рассылаем событие открытия модального окна всем игрокам в комнате
+          io.to(roomId).emit("openModal", { category });
+      });
+  
+      // Закрытие модального окна
+      socket.on("closeModal", (roomId) => {
+          if (!rooms[roomId]) {
+              socket.emit("roomNotFound", { message: "Комната не найдена" });
+              return;
+          }
+  
+          // Рассылаем событие закрытия модального окна всем игрокам в комнате
+          io.to(roomId).emit("closeModal");
+      });
+
   // Обработка отключения игрока
   socket.on("disconnect", () => {
     for (const roomId in rooms) {
