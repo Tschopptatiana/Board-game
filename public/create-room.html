@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Управление комнатами</title>
+  <style>
+    /* Стили для индикации загрузки */
+    .loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
   <h2>Создать новую комнату</h2>
@@ -19,13 +26,14 @@
   <script>
     // Создание комнаты
     document.getElementById("createRoomButton").addEventListener("click", async () => {
-      const password = document.getElementById("createPassword").value;
+      const password = document.getElementById("createPassword").value.trim();
       if (!password) {
         alert("Введите пароль");
         return;
       }
 
       const createButton = document.getElementById("createRoomButton");
+      createButton.classList.add("loading");
       createButton.disabled = true;
       createButton.innerText = "Создание...";
 
@@ -39,20 +47,23 @@
         });
 
         if (!response.ok) {
-          throw new Error("Ошибка сети");
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Ошибка сети");
         }
 
         const data = await response.json();
         if (data.roomId) {
           const roomLink = `${window.location.origin}/?roomId=${data.roomId}`;
           document.getElementById("roomLink").innerHTML = `Комната создана: <a href="${roomLink}" target="_blank">${roomLink}</a>`;
+          document.getElementById("createPassword").value = ""; // Очищаем поле ввода
         } else {
-          alert("Ошибка: " + data.error);
+          throw new Error("Не удалось создать комнату");
         }
       } catch (error) {
         console.error("Ошибка при создании комнаты:", error);
-        alert("Ошибка при создании комнаты");
+        alert(error.message || "Ошибка при создании комнаты");
       } finally {
+        createButton.classList.remove("loading");
         createButton.disabled = false;
         createButton.innerText = "Создать комнату";
       }
@@ -68,6 +79,7 @@
       }
 
       const deleteButton = document.getElementById("deleteRoomButton");
+      deleteButton.classList.add("loading");
       deleteButton.disabled = true;
       deleteButton.innerText = "Удаление...";
 
@@ -81,19 +93,23 @@
         });
 
         if (!response.ok) {
-          throw new Error("Ошибка сети");
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Ошибка сети");
         }
 
         const data = await response.json();
         if (data.success) {
           document.getElementById("deleteRoomMessage").innerText = data.message;
+          document.getElementById("roomIdInput").value = ""; // Очищаем поле ввода
+          document.getElementById("deletePassword").value = ""; // Очищаем поле ввода
         } else {
-          document.getElementById("deleteRoomMessage").innerText = "Ошибка: " + data.error;
+          throw new Error(data.error || "Не удалось удалить комнату");
         }
       } catch (error) {
         console.error("Ошибка при удалении комнаты:", error);
-        alert("Ошибка при удалении комнаты");
+        alert(error.message || "Ошибка при удалении комнаты");
       } finally {
+        deleteButton.classList.remove("loading");
         deleteButton.disabled = false;
         deleteButton.innerText = "Удалить комнату";
       }
