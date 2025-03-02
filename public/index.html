@@ -205,10 +205,18 @@
         playerDiv.classList.add("player");
         playerDiv.style.backgroundColor = playerColors[index % playerColors.length];
 
-        // Вычисляем координаты заново для каждого игрока
+        document.getElementById("board").appendChild(playerDiv); // Добавляем в DOM, чтобы получить размеры
+
+        // Получаем размеры фишки
+        let playerSize = playerDiv.offsetWidth || 30; // Фишка ещё не добавлена в DOM, ставим 30px по умолчанию
         let boardRect = gameBoard.getBoundingClientRect();
-        playerDiv.style.left = `${(player.position.xPercent / 100) * boardRect.width}px`;
-        playerDiv.style.top = `${(player.position.yPercent / 100) * boardRect.height}px`;
+
+        // Корректируем позицию с учётом размеров фишки
+        let left = (player.position.xPercent / 100) * boardRect.width - (playerSize / 2);
+        let top = (player.position.yPercent / 100) * boardRect.height - (playerSize / 2);
+
+        playerDiv.style.left = `${left}px`;
+        playerDiv.style.top = `${top}px`;
 
         playerDiv.dataset.id = player.id;
         players[player.id] = playerDiv;
@@ -217,13 +225,8 @@
             myPlayerId = player.id;
             playerDiv.id = "myPlayer";
         }
-
-        document.getElementById("board").appendChild(playerDiv);
     });
 });
-
-
-
         // Перемещение игрока
         document.addEventListener("click", (event) => {
     if (event.target.classList.contains("dice")) return;
