@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Управление комнатами</title>
+</head>
+<body>
+  <h2>Создать новую комнату</h2>
+  <input type="password" id="createPassword" placeholder="Введите пароль">
+  <button id="createRoomButton">Создать комнату</button>
+  <p id="roomLink"></p>
+
+  <h2>Удалить комнату</h2>
+  <input type="text" id="roomIdInput" placeholder="Введите ID комнаты">
+  <input type="password" id="deletePassword" placeholder="Введите пароль">
+  <button id="deleteRoomButton">Удалить комнату</button>
+  <p id="deleteRoomMessage"></p>
+
+  <script>
+    // Создание комнаты
+    document.getElementById("createRoomButton").addEventListener("click", async () => {
+      const password = document.getElementById("createPassword").value;
+      if (!password) {
+        alert("Введите пароль");
+        return;
+      }
+
+      const createButton = document.getElementById("createRoomButton");
+      createButton.disabled = true;
+      createButton.innerText = "Создание...";
+
+      try {
+        const response = await fetch("/create-room", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ password }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка сети");
+        }
+
+        const data = await response.json();
+        if (data.roomId) {
+          const roomLink = `${window.location.origin}/?roomId=${data.roomId}`;
+          document.getElementById("roomLink").innerHTML = `Комната создана: <a href="${roomLink}" target="_blank">${roomLink}</a>`;
+        } else {
+          alert("Ошибка: " + data.error);
+        }
+      } catch (error) {
+        console.error("Ошибка при создании комнаты:", error);
+        alert("Ошибка при создании комнаты");
+      } finally {
+        createButton.disabled = false;
+        createButton.innerText = "Создать комнату";
+      }
+    });
+
+    // Удаление комнаты
+    document.getElementById("deleteRoomButton").addEventListener("click", async () => {
+      const roomId = document.getElementById("roomIdInput").value.trim();
+      const password = document.getElementById("deletePassword").value.trim();
+      if (!roomId || !password) {
+        alert("Введите ID комнаты и пароль");
+        return;
+      }
+
+      const deleteButton = document.getElementById("deleteRoomButton");
+      deleteButton.disabled = true;
+      deleteButton.innerText = "Удаление...";
+
+      try {
+        const response = await fetch("/delete-room", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ roomId, password }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка сети");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById("deleteRoomMessage").innerText = data.message;
+        } else {
+          document.getElementById("deleteRoomMessage").innerText = "Ошибка: " + data.error;
+        }
+      } catch (error) {
+        console.error("Ошибка при удалении комнаты:", error);
+        alert("Ошибка при удалении комнаты");
+      } finally {
+        deleteButton.disabled = false;
+        deleteButton.innerText = "Удалить комнату";
+      }
+    });
+  </script>
+</body>
+</html>

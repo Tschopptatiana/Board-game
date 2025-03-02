@@ -34,11 +34,23 @@ const startPositions = [
 // Файл для хранения комнат
 const roomsFilePath = path.join(__dirname, "rooms.json");
 
-// Загрузка существующих комнат из файла (если файл есть)
-let savedRooms = [];
-if (fs.existsSync(roomsFilePath)) {
-  savedRooms = JSON.parse(fs.readFileSync(roomsFilePath, "utf-8"));
+// Создаем файл rooms.json, если он не существует
+if (!fs.existsSync(roomsFilePath)) {
+  fs.writeFileSync(roomsFilePath, JSON.stringify([]));
 }
+
+// Загрузка существующих комнат из файла
+let savedRooms = [];
+try {
+  savedRooms = JSON.parse(fs.readFileSync(roomsFilePath, "utf-8"));
+} catch (err) {
+  console.error("Ошибка при чтении файла rooms.json:", err);
+}
+
+// Маршрут для отдачи create-room.html
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "create-room.html"));
+});
 
 // Endpoint для создания комнаты (доступен только вам)
 app.post("/create-room", (req, res) => {
@@ -54,9 +66,13 @@ app.post("/create-room", (req, res) => {
   savedRooms.push({ roomId, createdAt: new Date() });
 
   // Сохранение комнат в файл
-  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
-
-  res.json({ roomId });
+  try {
+    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+    res.json({ roomId });
+  } catch (err) {
+    console.error("Ошибка при сохранении комнаты:", err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
 });
 
 // Endpoint для проверки комнаты
@@ -77,7 +93,14 @@ app.delete("/delete-room", (req, res) => {
 
   // Удаление комнаты из сохраненных комнат
   savedRooms = savedRooms.filter((room) => room.roomId !== roomId);
-  fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+
+  // Сохранение обновленного списка комнат
+  try {
+    fs.writeFileSync(roomsFilePath, JSON.stringify(savedRooms, null, 2));
+  } catch (err) {
+    console.error("Ошибка при удалении комнаты:", err);
+    return res.status(500).json({ error: "Ошибка сервера" });
+  }
 
   // Удаление комнаты из активных комнат в памяти
   delete rooms[roomId];
