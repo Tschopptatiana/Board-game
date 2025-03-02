@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error("❌ SUPABASE_URL или SUPABASE_KEY не установлены");
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BUCKET_NAME = "rooms";
@@ -9,6 +14,7 @@ const FILE_NAME = "rooms.json";
 
 // Функция для сохранения файла в Supabase
 async function saveRoomsToSupabase(rooms) {
+  console.log("Попытка сохранить комнаты в Supabase...");
   const { data, error } = await supabase
     .storage
     .from(BUCKET_NAME)
@@ -16,6 +22,7 @@ async function saveRoomsToSupabase(rooms) {
 
   if (error) {
     console.error("❌ Ошибка при сохранении в Supabase:", error);
+    throw error;
   } else {
     console.log("✅ Комнаты сохранены в Supabase");
   }
@@ -23,6 +30,7 @@ async function saveRoomsToSupabase(rooms) {
 
 // Функция для загрузки файла из Supabase
 async function loadRoomsFromSupabase() {
+  console.log("Попытка загрузить комнаты из Supabase...");
   const { data, error } = await supabase
     .storage
     .from(BUCKET_NAME)
@@ -30,7 +38,7 @@ async function loadRoomsFromSupabase() {
 
   if (error) {
     console.error("❌ Ошибка при загрузке из Supabase:", error);
-    return {};
+    throw error;
   }
 
   const roomsData = await data.text();
