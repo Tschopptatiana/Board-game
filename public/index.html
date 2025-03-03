@@ -21,7 +21,7 @@
         }
         #board {
             width: 600px;
-            height: 600px;
+            height: 800px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -112,31 +112,63 @@
         let modalOpen = false;
         const playerColors = ["red", "blue", "green", "yellow", "purple"];
         const imagesCover = {
-            "Дорожные знаки": "images/road-signs/cover.jpg"
-        };
+    "Дорожные знаки": "images/road-signs/cover.jpg",
+    "Члены семьи": "images/family/cover.jpg",
+    "Сказочные персонажи": "images/fairy-tale/cover.jpg",
+    "Известные личности": "images/famous-people/cover.jpg",
+    "Профессии": "images/professions/cover.jpg",
+    "Персонажи из кино и литературы": "images/movies-literature/cover.jpg",
+    "Метафорические образы": "images/metaphors/cover.jpg",
+    "Цитаты известных людей": "images/quotes/cover.jpg",
+    "Цитаты из книг": "images/book-quotes/cover.jpg",
+    "Строки из песен": "images/song-lyrics/cover.jpg",
+    "Устами младенца": "images/kids-sayings/cover.jpg",
+    "Хокку": "images/haiku/cover.jpg",
+    "Проблемы": "images/problems/cover.jpg",
+    "Откат назад": "images/rollback/cover.jpg",
+    "Волшебный грааль": "images/magic-grail/cover.jpg",
+    "Вопросы психотерапевта": "images/therapy-questions/cover.jpg",
+    "Вопросы от эксперта": "images/expert-questions/cover.jpg",
+    "Подсказки": "images/hints/cover.jpg",
+    "Вопросы ребенка": "images/child-questions/cover.jpg",
+    "Провокация": "images/provocation/cover.jpg",
+    "Подсказки тексты": "images/text-hints/cover.jpg",
+    "Таблица чувств": "images/feelings-table/cover.jpg"
+};
+
         const cells = [
-    { name: "Изначальный запрос и его модификация", xPercent: 10, yPercent: 80, widthPercent: 20, heightPercent: 10 },
-    { name: "Подсказки", xPercent: 35, yPercent: 75, widthPercent: 15, heightPercent: 8 },
-    { name: "Позиции", xPercent: 55, yPercent: 70, widthPercent: 20, heightPercent: 12 },
-    { name: "Члены семьи", xPercent: 50, yPercent: 75, widthPercent: 10, heightPercent: 6 },
-    { name: "Сказочные персонажи", xPercent: 55, yPercent: 75, widthPercent: 12, heightPercent: 6 },
-    { name: "Известные личности", xPercent: 65, yPercent: 75, widthPercent: 12, heightPercent: 6 },
-    { name: "Профессии", xPercent: 75, yPercent: 75, widthPercent: 10, heightPercent: 6 },
-    { name: "Персонажи из кино и литературы", xPercent: 85, yPercent: 75, widthPercent: 15, heightPercent: 6 },
-    { name: "Метафорические образы", xPercent: 90, yPercent: 70, widthPercent: 15, heightPercent: 6 },
-    { name: "Чувственный уровень 1", xPercent: 75, yPercent: 50, widthPercent: 20, heightPercent: 12 },
-    { name: "Любая карта", xPercent: 80, yPercent: 45, widthPercent: 10, heightPercent: 6 },
+    { name: "Подсказки", xPercent: 30, yPercent: 82, widthPercent: 9, heightPercent: 11 },
+    { name: "Члены семьи", xPercent: 44, yPercent: 87, widthPercent: 7, heightPercent: 5 },
+    { name: "Сказочные персонажи", xPercent: 51, yPercent: 83, widthPercent: 8, heightPercent: 5 },
+    { name: "Известные личности", xPercent: 60, yPercent: 83, widthPercent: 6, heightPercent: 6 },
+    { name: "Профессии", xPercent: 67.6, yPercent: 81, widthPercent: 6.9, heightPercent: 4.4 },
+    { name: "Персонажи из кино и литературы", xPercent: 76.1, yPercent: 82.5, widthPercent: 8.73, heightPercent: 4.5 },
+    { name: "Метафорические образы", xPercent: 84, yPercent: 79.13, widthPercent: 8.67, heightPercent: 4.75 },
+    { name: "Цитаты известных людей", xPercent: 85, yPercent: 72.6, widthPercent: 6.5, heightPercent: 4.62 },
     { name: "Дорожные знаки", xPercent: 75, yPercent: 40, widthPercent: 12, heightPercent: 6 },
-    { name: "Волшебный грааль", xPercent: 85, yPercent: 40, widthPercent: 12, heightPercent: 6 },
-    { name: "Проблемы", xPercent: 90, yPercent: 35, widthPercent: 10, heightPercent: 6 },
-    { name: "Чувственный уровень 2", xPercent: 20, yPercent: 30, widthPercent: 20, heightPercent: 12 },
-    { name: "Вопросы ребенка", xPercent: 15, yPercent: 25, widthPercent: 10, heightPercent: 6 },
-    { name: "Вопросы эксперта", xPercent: 25, yPercent: 25, widthPercent: 10, heightPercent: 6 },
-    { name: "Вопросы подсознания", xPercent: 35, yPercent: 25, widthPercent: 10, heightPercent: 6 },
-    { name: "Отгадка назад", xPercent: 45, yPercent: 25, widthPercent: 10, heightPercent: 6 },
-    { name: "Провокация", xPercent: 60, yPercent: 20, widthPercent: 15, heightPercent: 8 },
-    { name: "Сверка запроса", xPercent: 45, yPercent: 15, widthPercent: 15, heightPercent: 8 },
-    { name: "Выход на реализацию запроса", xPercent: 80, yPercent: 15, widthPercent: 20, heightPercent: 10 }
+    { name: "Цитаты из книг", xPercent: 86.3, yPercent: 64, widthPercent: 6.9, heightPercent: 4.4 },
+    { name: "Строки из песен", xPercent: 77, yPercent: 60.9, widthPercent: 6.2, heightPercent: 4.9 },
+    { name: "Устами младенца", xPercent: 85.8, yPercent: 56.4, widthPercent: 6.2, heightPercent: 4.4 },
+    { name: "Хокку", xPercent: 73, yPercent: 53, widthPercent: 6.5, heightPercent: 4.3 },
+    { name: "Проблемы", xPercent: 81.5, yPercent: 46.4, widthPercent: 8.7, heightPercent: 4.6 },
+    { name: "Откат назад", xPercent: 85.8, yPercent: 40.8, widthPercent: 9.2, heightPercent: 4.6 },
+    { name: "Дорожные знаки", xPercent: 73, yPercent: 41, widthPercent: 8.5, heightPercent: 4.5 },
+    { name: "Волшебный грааль", xPercent: 79.8, yPercent: 35, widthPercent: 8.4, heightPercent: 4.7 },
+    { name: "Метафорические образы", xPercent: 50.6, yPercent: 37.8, widthPercent: 10.07, heightPercent: 4.33 },
+    { name: "Персонажи из кино и литературы", xPercent: 48.5, yPercent: 42.5, widthPercent: 8.5, heightPercent: 5.13 },
+    { name: "Профессии", xPercent: 39, yPercent: 44.25, widthPercent: 7.7, heightPercent: 4 },
+    { name: "Известные личности", xPercent: 30.17, yPercent: 46.13, widthPercent: 8.16, heightPercent: 4.5 },
+    { name: "Сказочные персонажи", xPercent: 31.83, yPercent: 40.5, widthPercent: 7.67, heightPercent: 3.75 },
+    { name: "Члены семьи", xPercent: 23.6, yPercent: 41.13, widthPercent: 7.73, heightPercent: 4.12 },
+    { name: "Вопросы психотерапевта", xPercent: 18.5, yPercent: 31.62, widthPercent: 8.17, heightPercent: 4.63 },
+    { name: "Вопросы от эксперта", xPercent: 12.33, yPercent: 25.75, widthPercent: 7.67, heightPercent: 4.25 },
+    { name: "Подсказки", xPercent: 30.5, yPercent: 20, widthPercent: 7.83, heightPercent: 4.38 },
+    { name: "Откат назад", xPercent: 18.67, yPercent: 19.25, widthPercent: 8, heightPercent: 4.25 },
+    { name: "Вопросы ребенка", xPercent: 7.67, yPercent: 19.63, widthPercent: 7.66, heightPercent: 4.62 },
+    { name: "Провокация", xPercent: 58, yPercent: 6, widthPercent: 11.17, heightPercent: 12.25 },
+    { name: "Любая карта", xPercent: 74, yPercent: 27.75, widthPercent: 8.33, heightPercent: 4.38 },
+    { name: "Подсказки тексты", xPercent: 67.67, yPercent: 35.13, widthPercent: 8.83, heightPercent: 4.12 },
+    { name: "Таблица чувств", xPercent: 4, yPercent: 38.38, widthPercent: 13.7, heightPercent: 9.62 },
 ];
 
         // Получаем roomId из URL
@@ -212,9 +244,8 @@
         let boardRect = gameBoard.getBoundingClientRect();
 
         // Корректируем позицию с учётом размеров фишки
-        console.log(player)
-        let left = (player.position.x / 100) * boardRect.width - (playerSize / 2);
-        let top = (player.position.y / 100) * boardRect.height - (playerSize / 2);
+        let left = (player.position.xPercent / 100) * boardRect.width - (playerSize / 2);
+        let top = (player.position.yPercent / 100) * boardRect.height - (playerSize / 2);
 
         playerDiv.style.left = `${left}px`;
         playerDiv.style.top = `${top}px`;
@@ -230,21 +261,25 @@
 });
         // Перемещение игрока
         document.addEventListener("click", (event) => {
+     
     if (event.target.classList.contains("dice")) return;
-    if (!modalOpen) {
-        let gameBoard = document.getElementById("gameBoard");
-        let boardRect = gameBoard.getBoundingClientRect();
+    if (modalOpen) return;
 
-        let xPercent = ((event.clientX - boardRect.left) / boardRect.width) * 100;
-        let yPercent = ((event.clientY - boardRect.top) / boardRect.height) * 100;
+let boardRect = event.target.getBoundingClientRect();
+let xPercent = ((event.clientX - boardRect.left) / boardRect.width) * 100;
+let yPercent = ((event.clientY - boardRect.top) / boardRect.height) * 100;
 
-        socket.emit("movePlayer", { roomId, xPercent, yPercent });
-    }
+socket.emit("movePlayer", { roomId, xPercent, yPercent });
 });
 
 
         // Открытие модального окна
         document.addEventListener("dblclick", (event) => {
+            const gameBoard = event.target.getBoundingClientRect(); // Получаем размеры поля
+
+const xPercent = ((event.offsetX / gameBoard.width) * 100).toFixed(2);
+const yPercent = ((event.offsetY / gameBoard.height) * 100).toFixed(2);
+
             if (myPlayerId) {
                 let category = getCellAtClick(event.clientX, event.clientY);
                 if (category) {
@@ -273,9 +308,24 @@
 
     let overlay = document.createElement("div");
     overlay.classList.add("modal-overlay");
+    
+    let imageSrc;
+
+    if (category === "Любая карта") {
+        // Получаем массив ключей (категорий) без "Любая карта"
+        const categories = Object.keys(imagesCover).filter(cat => cat !== "Любая карта");
+        // Выбираем случайную категорию
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        category = randomCategory;
+        // Получаем соответствующее изображение
+        imageSrc = imagesCover[randomCategory];
+    } else {
+        imageSrc = imagesCover[category];
+    }
+
     overlay.innerHTML = `
         <div class="modal">
-            <img src="${imagesCover[category]}" alt="Тема: ${category}" onclick="flipImage(this, '${category}')" />
+            <img src="${imageSrc}" alt="Тема: ${category}" onclick="flipImage(this, '${category}')" />
         </div>
     `;
     document.body.appendChild(overlay);
@@ -339,12 +389,30 @@
         // Получение случайного изображения
         function getRandomImage(category) {
             const images = {
-                "Члены семьи": ["images/family/family1.jpg", "images/family/family2.jpg"],
-                "Известные личности": ["images/celebrities/celeb1.jpg", "images/celebrities/celeb2.jpg"],
-                "Профессии": ["images/jobs/job1.jpg", "images/jobs/job2.jpg"],
-                "Провокация": ["images/provocation/prov1.jpg", "images/provocation/prov2.jpg"],
-                "Дорожные знаки": ["images/road-signs/2.jpg", "images/road-signs/4.jpg"]
-            };
+    "Дорожные знаки": Array.from({ length: 38 }, (_, i) => `images/road-signs/${i + 1}.jpg`),
+    "Члены семьи": Array.from({ length: 25 }, (_, i) => `images/family/${i + 1}.jpg`),
+    "Сказочные персонажи": Array.from({ length: 29 }, (_, i) => `images/fairy-tale/${i + 1}.jpg`),
+    "Известные личности": Array.from({ length: 30 }, (_, i) => `images/famous-people/${i + 1}.jpg`),
+    "Профессии": Array.from({ length: 32 }, (_, i) => `images/professions/${i + 1}.jpg`),
+    "Персонажи из кино и литературы": Array.from({ length: 48 }, (_, i) => `images/movies-literature/${i + 1}.jpg`),
+    "Метафорические образы": Array.from({ length: 23 }, (_, i) => `images/metaphors/${i + 1}.jpg`),
+    "Цитаты известных людей": Array.from({ length: 29 }, (_, i) => `images/quotes/${i + 1}.jpg`),
+    "Цитаты из книг": Array.from({ length: 29 }, (_, i) => `images/book-quotes/${i + 1}.jpg`),
+    "Строки из песен": Array.from({ length: 24 }, (_, i) => `images/song-lyrics/${i + 1}.jpg`),
+    "Устами младенца": Array.from({ length: 18 }, (_, i) => `images/kids-sayings/${i + 1}.jpg`),
+    "Хокку": Array.from({ length: 29 }, (_, i) => `images/haiku/${i + 1}.jpg`),
+    "Проблемы": Array.from({ length: 22 }, (_, i) => `images/problems/${i + 1}.jpg`),
+    "Откат назад": Array.from({ length: 31 }, (_, i) => `images/rollback/${i + 1}.jpg`),
+    "Волшебный грааль": Array.from({ length: 91 }, (_, i) => `images/magic-grail/${i + 1}.jpg`),
+    "Вопросы психотерапевта": Array.from({ length: 51 }, (_, i) => `images/therapy-questions/${i + 1}.jpg`),
+    "Вопросы от эксперта": Array.from({ length: 41 }, (_, i) => `images/expert-questions/${i + 1}.jpg`),
+    "Подсказки": Array.from({ length: 66 }, (_, i) => `images/hints/${i + 1}.jpg`),
+    "Вопросы ребенка": Array.from({ length: 24 }, (_, i) => `images/child-questions/${i + 1}.jpg`),
+    "Провокация": Array.from({ length: 25 }, (_, i) => `images/provocation/${i + 1}.jpg`),
+    "Подсказки тексты": Array.from({ length: 39 }, (_, i) => `images/text-hints/${i + 1}.jpg`),
+    "Таблица чувств": Array.from({ length: 164 }, (_, i) => `images/feelings-table/${i + 1}.jpg`)
+};
+
             let categoryImages = images[category] || ["images/default.jpg"];
             return categoryImages[Math.floor(Math.random() * categoryImages.length)];
         }

@@ -124,14 +124,29 @@ socket.on("joinRoom", (roomId) => {
       return;
   }
 
-    const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
-    const playerPosition = { x: startPositions[rooms[roomId].players.length % startPositions.length].xPercent, y: startPositions[rooms[roomId].players.length % startPositions.length].yPercent };
+  // Найти свободную позицию
+  let position;
+  for (let i = 0; i < startPositions.length; i++) {
+      let isOccupied = rooms[roomId].players.some(p => p.position.xPercent === startPositions[i].xPercent && p.position.yPercent === startPositions[i].yPercent);
+      if (!isOccupied) {
+          position = startPositions[i];
+          break;
+      }
+  }
 
-    const playerData = {
-        id: socket.id,
-        color: playerColor,
-        position: playerPosition,
-    };
+  if (!position) {
+      // Если все стандартные позиции заняты, ставим в случайное место
+      position = {
+          xPercent: Math.random() * 80 + 10, // От 10% до 90%
+          yPercent: Math.random() * 80 + 10
+      };
+  }
+
+  const playerData = {
+      id: socket.id,
+      color: playerColors[rooms[roomId].players.length % playerColors.length],
+      position: position,
+  };
 
   rooms[roomId].players.push(playerData);
   socket.join(roomId);
@@ -139,6 +154,7 @@ socket.on("joinRoom", (roomId) => {
 
   io.to(roomId).emit("updatePlayers", rooms[roomId].players);
 });
+
 
 // Обработка перемещения игрока
 socket.on("movePlayer", ({ roomId, xPercent, yPercent }) => {
@@ -149,9 +165,10 @@ socket.on("movePlayer", ({ roomId, xPercent, yPercent }) => {
 
   const player = rooms[roomId].players.find((p) => p.id === socket.id);
   if (player) {
-      player.position = { xPercent, yPercent };
-      io.to(roomId).emit("updatePlayers", rooms[roomId].players);
-  }
+    player.position.xPercent = xPercent;
+    player.position.yPercent = yPercent;
+    io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+}
 });
 
 socket.on("rollDice", ({ roomId, roll }) => {
