@@ -212,8 +212,9 @@
         let boardRect = gameBoard.getBoundingClientRect();
 
         // Корректируем позицию с учётом размеров фишки
-        let left = (player.position.xPercent / 100) * boardRect.width - (playerSize / 2);
-        let top = (player.position.yPercent / 100) * boardRect.height - (playerSize / 2);
+        console.log(player)
+        let left = (player.position.x / 100) * boardRect.width - (playerSize / 2);
+        let top = (player.position.y / 100) * boardRect.height - (playerSize / 2);
 
         playerDiv.style.left = `${left}px`;
         playerDiv.style.top = `${top}px`;

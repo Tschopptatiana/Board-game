@@ -32,10 +32,12 @@ let rooms = {}; // Должно быть `let`, а не `const`
 
 const playerColors = ["red", "blue", "green", "yellow", "purple"];
 const startPositions = [
-  { x: 100, y: 100 }, { x: 200, y: 200 }, { x: 300, y: 100 },
-  { x: 400, y: 100 }, { x: 500, y: 100 }
+  { xPercent: 10, yPercent: 10 }, 
+  { xPercent: 20, yPercent: 10 }, 
+  { xPercent: 30, yPercent: 10 }, 
+  { xPercent: 40, yPercent: 10 }, 
+  { xPercent: 50, yPercent: 10 }
 ];
-
 const roomsFilePath = path.join(__dirname, "rooms.json");
 
 // Загружаем комнаты из файла при старте сервера
@@ -50,7 +52,7 @@ if (fs.existsSync(roomsFilePath)) {
   }
 }
 
-// Функция сохранения комнат
+// Функция сохранения комнат`
 async function saveRoomsToFile() {
   try {
     await saveRoomsToSupabase(rooms);
@@ -94,9 +96,15 @@ app.delete("/delete-room", (req, res) => {
 
   res.json({ success: true });
 });
-
+let activePlayers = 0;
+let shutdownTimeout;
 // Логика Socket.IO
 io.on("connection", (socket) => {
+  console.log("Игрок подключился:", socket.id);
+  activePlayers++;
+
+  clearTimeout(shutdownTimeout); // Отключаем таймер, если игрок зашел
+
   console.log("Игрок подключился", socket.id);
 
 // Присоединение к комнате
@@ -116,12 +124,14 @@ socket.on("joinRoom", (roomId) => {
       return;
   }
 
-  const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
-  const playerData = {
-      id: socket.id,
-      color: playerColor,
-      position: { x: startPositions[rooms[roomId].players.length % playerColors.length].x, y: startPositions[rooms[roomId].players.length % playerColors.length].y }
-  };
+    const playerColor = playerColors[rooms[roomId].players.length % playerColors.length];
+    const playerPosition = { x: startPositions[rooms[roomId].players.length % startPositions.length].xPercent, y: startPositions[rooms[roomId].players.length % startPositions.length].yPercent };
+
+    const playerData = {
+        id: socket.id,
+        color: playerColor,
+        position: playerPosition,
+    };
 
   rooms[roomId].players.push(playerData);
   socket.join(roomId);
@@ -185,6 +195,16 @@ socket.on("disconnect", () => {
   for (const roomId in rooms) {
     rooms[roomId].players = rooms[roomId].players.filter((p) => p.id !== socket.id);
     io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+  }
+  console.log("Игрок отключился:", socket.id);
+  activePlayers--;
+
+  if (activePlayers === 0) {
+      console.log("Нет активных игроков. Сервер выключится через 10 минут...");
+      shutdownTimeout = setTimeout(() => {
+          console.log("Выключение сервера...");
+          process.exit(0); // Останавливаем сервер
+      }, 10 * 60 * 1000); // 10 минут
   }
 });
 });
