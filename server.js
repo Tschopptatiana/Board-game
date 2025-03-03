@@ -211,6 +211,19 @@ socket.on("flipImage", ({ roomId, category, newSrc, flipped }) => {
   io.to(roomId).emit("flipImage", { category, newSrc, flipped });
 });
 
+socket.on("leaveRoom", ({ roomId, playerId }) => {
+  if (!rooms[roomId]) return;
+
+  // Удаляем игрока из списка
+  rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== playerId);
+
+  // Сообщаем остальным игрокам об обновлении списка
+  io.to(roomId).emit("updatePlayers", rooms[roomId].players);
+
+  console.log(`Игрок ${playerId} покинул комнату ${roomId}`);
+});
+
+
 // Отключение игрока
 socket.on("disconnect", () => {
   for (const roomId in rooms) {
