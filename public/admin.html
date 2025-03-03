@@ -99,7 +99,7 @@
 
         const data = await response.json();
         if (data.success) {
-          document.getElementById("deleteRoomMessage").innerText = data.message;
+          document.getElementById("deleteRoomMessage").innerText = `Удалена комната ${roomId}`;
           document.getElementById("roomIdInput").value = ""; // Очищаем поле ввода
           document.getElementById("deletePassword").value = ""; // Очищаем поле ввода
         } else {
