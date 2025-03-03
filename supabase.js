@@ -1,8 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import dotenv from "dotenv";
-
-// Загружаем переменные окружения
-dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -47,7 +43,16 @@ async function loadRoomsFromSupabase() {
 
   const roomsData = await data.text();
   console.log("✅ Комнаты загружены из Supabase");
-  return JSON.parse(roomsData);
+
+  // Парсим данные
+  const rooms = JSON.parse(roomsData);
+
+  // Очищаем участников для каждой комнаты
+  for (const roomId in rooms) {
+    rooms[roomId].players = []; // Сбрасываем участников
+  }
+
+  return rooms;
 }
 
 export { saveRoomsToSupabase, loadRoomsFromSupabase };
