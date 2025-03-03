@@ -100,12 +100,11 @@ app.delete("/delete-room", (req, res) => {
 
   res.json({ success: true });
 });
-let activePlayers = 0;
+
 let shutdownTimeout;
 // Логика Socket.IO
 io.on("connection", (socket) => {
   console.log("Игрок подключился:", socket.id);
-  activePlayers++;
 
   clearTimeout(shutdownTimeout); // Отключаем таймер, если игрок зашел
 
@@ -231,15 +230,6 @@ socket.on("disconnect", () => {
     io.to(roomId).emit("updatePlayers", rooms[roomId].players);
   }
   console.log("Игрок отключился:", socket.id);
-  activePlayers--;
-
-  if (activePlayers === 0) {
-      console.log("Нет активных игроков. Сервер выключится через 10 минут...");
-      shutdownTimeout = setTimeout(() => {
-          console.log("Выключение сервера...");
-          process.exit(0); // Останавливаем сервер
-      }, 10 * 60 * 1000); // 10 минут
-  }
 });
 });
 
