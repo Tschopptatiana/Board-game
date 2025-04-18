@@ -280,7 +280,6 @@
 
         // Обновление игроков
         socket.on("updatePlayers", (serverPlayers) => {
-            console.log('update playesrs')
     document.querySelectorAll(".player").forEach(el => el.remove());
     players = {};
 
@@ -388,7 +387,6 @@ const yPercent = ((event.offsetY / gameBoard.height) * 100).toFixed(2);
 
         // Показ модального окна с изображением
         function showModalWithImage(category, fromNetwork = false) {
-            console.log("шоу окно")
     if (modalOpen) return; // Если модалка уже открыта, не создаём её снова
     modalOpen = true;
 
